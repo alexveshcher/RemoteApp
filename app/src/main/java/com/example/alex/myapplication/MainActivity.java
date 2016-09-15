@@ -5,35 +5,38 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
-    public String address = "192.168.1.9";
+    public String address = "192.168.0.27";
     private Socket client;
     private PrintWriter printwriter;
     private String messsage = "no text";
+    List<String> pc_address;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        pc_address = new ArrayList<>();
+
 
         ///textField = (EditText) findViewById(R.id.editText); // reference to the text field
-//        space = (Button) findViewById(R.id.space); // reference to the send space
-//        altleft = (Button) findViewById(R.id.altleft);
-//        altright = (Button) findViewById(R.id.altright);
 
         ScanLocalDevices devicesTask = new ScanLocalDevices();
         devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
-
     }
 
     public void space(View view) {
@@ -94,6 +97,13 @@ public class MainActivity extends Activity {
         SendMessage sendMessageTask = new SendMessage();
         sendMessageTask.execute();
     }
+    public void getIPs(View view){
+        ScanLocalDevices devicesTask = new ScanLocalDevices();
+        devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.simple_list_item_1, pc_address);
+        ListView listView = (ListView) findViewById(R.id.listView);
+        listView.setAdapter(adapter);
+    }
 
 
     private class SendMessage extends AsyncTask<Void, Void, Void> {
@@ -119,25 +129,32 @@ public class MainActivity extends Activity {
     }
 
     private class ScanLocalDevices extends AsyncTask<Void, Void, Void> {
+        String[] private_subnet = {"192.168.0", "192.168.1"};
 
         String IPSCAN_TAG = "IP Scan: ";
 
         @Override
         protected Void doInBackground(Void... params) {
-            checkHosts("192.168.1");
+            checkHosts(private_subnet);
             return null;
         }
 
-        public void checkHosts(String subnet) {
+        private void checkHosts(String[] subnet) {
             int timeout = 50;
-            for (int i=1;i<255;i++){
-                String host=subnet + "." + i;
-                try {
-                    if (InetAddress.getByName(host).isReachable(timeout)){
-                        Log.d(IPSCAN_TAG, host + " is reachable");
+            for(int j = 0; j < subnet.length; j++ ){
+                for (int i=1;i<255;i++){
+                    String host_ip=subnet[j] + "." + i;
+                    //Log.e(IPSCAN_TAG, host_ip);
+                    try {
+                        if (InetAddress.getByName(host_ip).isReachable(timeout)){
+                            Log.d(IPSCAN_TAG, host_ip + " is reachable");
+                            //InetAddress inetAddress = InetAddress.getByName(host_ip);
+                            //String host_name = inetAddress.getHostName();
+                            pc_address.add(host_ip); //+ " - "+ host_name);
+                        }
+                    } catch (IOException e) {
+                        Log.e(IPSCAN_TAG, "some error");
                     }
-                } catch (IOException e) {
-                    Log.e(IPSCAN_TAG, "some error");
                 }
             }
             Log.e(IPSCAN_TAG, "Scan finished");
