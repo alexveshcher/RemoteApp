@@ -1,14 +1,15 @@
 package com.example.alex.myapplication;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,16 +21,22 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    public String address = "192.168.0.27";
+    public String address;// = "192.168.0.27";
     private Socket client;
     private PrintWriter printwriter;
     private String messsage = "no text";
     List<String> pc_address;
+    private ArrayAdapter<String> adapter;
+    TextView current_ip;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        address = sharedPref.getString("IP","192.168.0.11");
+        current_ip = (TextView) findViewById(R.id.current_ip);
+        current_ip.setText(address);
         pc_address = new ArrayList<>();
 
 
@@ -37,6 +44,7 @@ public class MainActivity extends Activity {
 
         ScanLocalDevices devicesTask = new ScanLocalDevices();
         devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
+        adapter = new ArrayAdapter<String>(this, R.layout.simple_list_item_1, pc_address);
     }
 
     public void space(View view) {
@@ -98,11 +106,27 @@ public class MainActivity extends Activity {
         sendMessageTask.execute();
     }
     public void getIPs(View view){
+        pc_address.clear();
         ScanLocalDevices devicesTask = new ScanLocalDevices();
         devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.simple_list_item_1, pc_address);
         ListView listView = (ListView) findViewById(R.id.listView);
         listView.setAdapter(adapter);
+    }
+
+    public void setIP(View view){
+        //Log.e("nice","nicee");
+        TextView textView = (TextView) view;
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        String ip = textView.getText().toString();
+        address = ip;
+        current_ip.setText(ip);
+        Log.e("address", address);
+        editor.putString("IP", ip);
+        //Log.e("settings", sharedPref.getString("IP","azalza"));
+        editor.apply();
+
+
     }
 
 
@@ -112,6 +136,7 @@ public class MainActivity extends Activity {
         protected Void doInBackground(Void... params) {
             try {
                 client = new Socket(address, 4444); // connect to the server
+                Log.e("background thread", address);
                 printwriter = new PrintWriter(client.getOutputStream(), true);
                 printwriter.write(messsage); // write the message to output stream
 
@@ -120,9 +145,9 @@ public class MainActivity extends Activity {
                 client.close(); // closing the connection
 
             } catch (UnknownHostException e) {
-                e.printStackTrace();
+                Log.e("Send Message Task", "Unknown host exception");
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("Send Message Task", e.toString());
             }
             return null;
         }
@@ -142,7 +167,7 @@ public class MainActivity extends Activity {
         private void checkHosts(String[] subnet) {
             int timeout = 50;
             for(int j = 0; j < subnet.length; j++ ){
-                for (int i=1;i<255;i++){
+                for (int i=2;i<255;i++){
                     String host_ip=subnet[j] + "." + i;
                     //Log.e(IPSCAN_TAG, host_ip);
                     try {
@@ -151,6 +176,13 @@ public class MainActivity extends Activity {
                             //InetAddress inetAddress = InetAddress.getByName(host_ip);
                             //String host_name = inetAddress.getHostName();
                             pc_address.add(host_ip); //+ " - "+ host_name);
+                            runOnUiThread(new Runnable() {
+                                              @Override
+                                              public void run() {
+                                                  adapter.notifyDataSetChanged();
+                                              }
+                                          });
+
                         }
                     } catch (IOException e) {
                         Log.e(IPSCAN_TAG, "some error");
