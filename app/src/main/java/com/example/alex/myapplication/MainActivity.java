@@ -2,6 +2,7 @@ package com.example.alex.myapplication;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -38,12 +40,9 @@ public class MainActivity extends Activity {
         current_ip = (TextView) findViewById(R.id.current_ip);
         current_ip.setText(address);
         pc_address = new ArrayList<>();
-
-
         ///textField = (EditText) findViewById(R.id.editText); // reference to the text field
-
-        ScanLocalDevices devicesTask = new ScanLocalDevices();
-        devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
+        //ScanLocalDevices devicesTask = new ScanLocalDevices();
+        //devicesTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //parallel execution with commanding task
         adapter = new ArrayAdapter<String>(this, R.layout.simple_list_item_1, pc_address);
     }
 
@@ -129,6 +128,11 @@ public class MainActivity extends Activity {
 
     }
 
+    public void scanQR(View view) {
+        Intent intent = new Intent(this, QRScanActivity.class);
+        startActivity(intent);
+    }
+
 
     private class SendMessage extends AsyncTask<Void, Void, Void> {
 
@@ -190,6 +194,12 @@ public class MainActivity extends Activity {
                 }
             }
             Log.e(IPSCAN_TAG, "Scan finished");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(),"Scan Finished", Toast.LENGTH_LONG).show();
+                }
+            });
         }
     }
 }

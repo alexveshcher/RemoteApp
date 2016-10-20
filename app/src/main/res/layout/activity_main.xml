@@ -138,4 +138,14 @@
         android:id="@+id/current_ip"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan QR"
+        android:id="@+id/scan"
+        android:layout_below="@+id/mute"
+        android:layout_alignRight="@+id/doubletap"
+        android:layout_alignEnd="@+id/doubletap"
+        android:onClick="scanQR" />
 </RelativeLayout>
